@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ServRegistry — Community Package Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glow-bg">
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+  </div>
+
+  <div class="app-container">
+    <header class="app-header glass-card">
+      <div class="logo-area">
+        <div class="logo-icon">❖</div>
+        <div class="logo-text">
+          <h1>ServRegistry</h1>
+          <span>Servverse Package Engine</span>
+        </div>
+      </div>
+      <div class="system-status">
+        <div class="status-indicator online"></div>
+        <span>Registry Online</span>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <div class="stat-card glass-card">
+        <div class="stat-title">Total Packages</div>
+        <div class="stat-value" id="stat-total-packages">0</div>
+        <div class="stat-desc">Community-contributed modules</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-title">Storage Backend</div>
+        <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: var(--secondary);">ServStore</div>
+        <div class="stat-desc">Distributed & consistent S3 bucket</div>
+      </div>
+      <div class="stat-card glass-card">
+        <div class="stat-title">Installation Driver</div>
+        <div class="stat-value" style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">Serv-lang CLI</div>
+        <div class="stat-desc">Zero-config package resolution</div>
+      </div>
+    </section>
+
+    <main class="main-content">
+      <div class="section-header">
+        <div class="title-wrap">
+          <h2>Available Packages</h2>
+          <p class="section-desc">Search and download libraries for your Serv-lang microservices.</p>
+        </div>
+        <div class="search-bar glass-card">
+          <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" id="search-input" placeholder="Search packages...">
+        </div>
+      </div>
+
+      <div class="packages-grid" id="packages-container">
+        <!-- Filled dynamically by app.js -->
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Querying package registry...</p>
+        </div>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>ServRegistry · Powered by <strong style="color:var(--secondary);">ServStore</strong></p>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
