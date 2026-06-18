@@ -130,15 +130,19 @@ func main() {
 
 	// Publish API
 	mux.HandleFunc("/publish", handlePublish)
+	mux.HandleFunc("/api/v1/publish", handlePublish)
 
 	// Install/Fetch package tarball API
 	mux.HandleFunc("/packages/", handleGetPackage)
+	mux.HandleFunc("/api/v1/packages/", handleGetPackage)
 
 	// Search API
 	mux.HandleFunc("/api/packages/search", handleSearchPackages)
+	mux.HandleFunc("/api/v1/packages/search", handleSearchPackages)
 
 	// API to list packages or versions
 	mux.HandleFunc("/api/packages/", handlePackagesAPI)
+	mux.HandleFunc("/api/v1/packages/", handlePackagesAPI)
 
 	// Web dashboard static files
 	mux.HandleFunc("/", handleWebDashboard)
@@ -192,7 +196,7 @@ func ensureBucketExists(ctx context.Context) {
 
 func handlePublish(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		WriteJSONError(w, r, "Method not allowed", "ERR_METHOD_NOT_ALLOWED", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -200,12 +204,12 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 	if jwtSecret := os.Getenv("SERV_JWT_SECRET"); jwtSecret != "" {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			http.Error(w, "Unauthorized: Missing or invalid token", http.StatusUnauthorized)
+			WriteJSONError(w, r, "Unauthorized: Missing or invalid token", "ERR_UNAUTHORIZED", http.StatusUnauthorized)
 			return
 		}
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if _, ok := validateJWT(token, []byte(jwtSecret)); !ok {
-			http.Error(w, "Unauthorized: Invalid JWT", http.StatusUnauthorized)
+			WriteJSONError(w, r, "Unauthorized: Invalid JWT", "ERR_INVALID_JWT", http.StatusUnauthorized)
 			return
 		}
 	}
@@ -214,7 +218,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 	data, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Failed to read body: %v", err)
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+		WriteJSONError(w, r, "Failed to read request body", "ERR_BAD_REQUEST_BODY", http.StatusBadRequest)
 		return
 	}
 
@@ -225,7 +229,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Manifest parsing failed or not found: %v. Using fallback", err)
 		name = r.URL.Query().Get("name")
 		if name == "" {
-			http.Error(w, "Missing 'name' parameter and no serv.toml found", http.StatusBadRequest)
+			WriteJSONError(w, r, "Missing 'name' parameter and no serv.toml found", "ERR_MISSING_NAME_PARAMETER", http.StatusBadRequest)
 			return
 		}
 		version = r.URL.Query().Get("version")
@@ -239,7 +243,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 	name = strings.TrimSpace(filepath.Base(name))
 	version = strings.TrimSpace(filepath.Base(version))
 	if name == "" || name == "." || name == "/" || version == "" {
-		http.Error(w, "Invalid package name or version", http.StatusBadRequest)
+		WriteJSONError(w, r, "Invalid package name or version", "ERR_INVALID_PACKAGE_VERSION", http.StatusBadRequest)
 		return
 	}
 
@@ -274,7 +278,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 
 	updatedMetaBytes, err := json.MarshalIndent(metadata, "", "  ")
 	if err != nil {
-		http.Error(w, "Failed to serialize metadata", http.StatusInternalServerError)
+		WriteJSONError(w, r, "Failed to serialize metadata", "ERR_INTERNAL_SERVER_ERROR", http.StatusInternalServerError)
 		return
 	}
 
@@ -287,7 +291,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("Failed to upload metadata to S3: %v", err)
-		http.Error(w, "Failed to upload metadata", http.StatusInternalServerError)
+		WriteJSONError(w, r, "Failed to upload metadata", "ERR_METADATA_UPLOAD_FAILED", http.StatusInternalServerError)
 		return
 	}
 
@@ -301,7 +305,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("Failed to upload package tarball to S3: %v", err)
-		http.Error(w, "Failed to upload package to storage: "+err.Error(), http.StatusInternalServerError)
+		WriteJSONError(w, r, "Failed to upload package to storage: "+err.Error(), "ERR_PACKAGE_UPLOAD_FAILED", http.StatusInternalServerError)
 		return
 	}
 
@@ -332,14 +336,19 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 
 func handleGetPackage(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		WriteJSONError(w, r, "Method not allowed", "ERR_METHOD_NOT_ALLOWED", http.StatusMethodNotAllowed)
 		return
 	}
 
 	// Path will be "/packages/{name}.tar.gz" or "/packages/{name}/{version}/{name}-{version}.tar.gz"
-	path := strings.TrimPrefix(r.URL.Path, "/packages/")
+	var path string
+	if strings.HasPrefix(r.URL.Path, "/api/v1/packages/") {
+		path = strings.TrimPrefix(r.URL.Path, "/api/v1/packages/")
+	} else {
+		path = strings.TrimPrefix(r.URL.Path, "/packages/")
+	}
 	if path == "" {
-		http.Error(w, "Missing package filename", http.StatusBadRequest)
+		WriteJSONError(w, r, "Missing package filename", "ERR_MISSING_FILENAME", http.StatusBadRequest)
 		return
 	}
 
@@ -390,7 +399,7 @@ func handleGetPackage(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("Failed to get object from S3: %v", err)
-		http.Error(w, "Package not found", http.StatusNotFound)
+		WriteJSONError(w, r, "Package not found", "ERR_PACKAGE_NOT_FOUND", http.StatusNotFound)
 		return
 	}
 	defer resp.Body.Close()
@@ -404,7 +413,7 @@ func handleGetPackage(w http.ResponseWriter, r *http.Request) {
 
 func handleListPackages(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		WriteJSONError(w, r, "Method not allowed", "ERR_METHOD_NOT_ALLOWED", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -424,16 +433,169 @@ func handlePackagesAPI(w http.ResponseWriter, r *http.Request) {
 		handleGetVersions(w, r)
 		return
 	}
+	if strings.Contains(r.URL.Path, "/deps") {
+		handleGetDeps(w, r)
+		return
+	}
 	handleListPackages(w, r)
 }
 
+func handleGetDeps(w http.ResponseWriter, r *http.Request) {
+	// Path: /api/packages/{name}/deps or /api/packages/{name}/{version}/deps
+	var path string
+	if strings.HasPrefix(r.URL.Path, "/api/v1/packages/") {
+		path = strings.TrimPrefix(r.URL.Path, "/api/v1/packages/")
+	} else {
+		path = strings.TrimPrefix(r.URL.Path, "/api/packages/")
+	}
+	path = strings.TrimSuffix(path, "/deps")
+	parts := strings.Split(path, "/")
+
+	var name, version string
+	if len(parts) == 1 {
+		name = parts[0]
+	} else if len(parts) == 2 {
+		name = parts[0]
+		version = parts[1]
+	} else {
+		WriteJSONError(w, r, "Invalid path", "ERR_INVALID_PATH", http.StatusBadRequest)
+		return
+	}
+
+	// Fetch metadata
+	metadataKey := fmt.Sprintf("%s/metadata.json", name)
+	resp, err := s3Client.GetObject(r.Context(), &s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(metadataKey),
+	})
+	if err != nil {
+		WriteJSONError(w, r, "Package not found", "ERR_PACKAGE_NOT_FOUND", http.StatusNotFound)
+		return
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		WriteJSONError(w, r, "Failed to read metadata", "ERR_INTERNAL_SERVER_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	var metadata PackageMetadata
+	if err := json.Unmarshal(data, &metadata); err != nil {
+		WriteJSONError(w, r, "Failed to parse metadata", "ERR_INTERNAL_SERVER_ERROR", http.StatusInternalServerError)
+		return
+	}
+
+	// If no version specified, use latest
+	if version == "" {
+		var latestTime time.Time
+		for v, details := range metadata.Versions {
+			t, err := time.Parse(time.RFC3339, details.PublishedAt)
+			if err == nil && t.After(latestTime) {
+				latestTime = t
+				version = v
+			}
+		}
+	}
+
+	versionDetails, ok := metadata.Versions[version]
+	if !ok {
+		WriteJSONError(w, r, fmt.Sprintf("Version %s not found", version), "ERR_VERSION_NOT_FOUND", http.StatusNotFound)
+		return
+	}
+
+	// Resolve full dependency tree (BFS)
+	type DepNode struct {
+		Name         string   `json:"name"`
+		Version      string   `json:"version"`
+		Dependencies []string `json:"dependencies"`
+	}
+
+	resolved := []DepNode{{
+		Name:         name,
+		Version:      version,
+		Dependencies: versionDetails.Dependencies,
+	}}
+
+	seen := map[string]bool{name: true}
+	queue := versionDetails.Dependencies
+
+	for len(queue) > 0 {
+		dep := queue[0]
+		queue = queue[1:]
+
+		// Parse "pkgname@version"
+		depParts := strings.SplitN(dep, "@", 2)
+		depName := depParts[0]
+		if seen[depName] {
+			continue
+		}
+		seen[depName] = true
+
+		depMetaKey := fmt.Sprintf("%s/metadata.json", depName)
+		depResp, err := s3Client.GetObject(r.Context(), &s3.GetObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    aws.String(depMetaKey),
+		})
+		if err != nil {
+			// Dependency not found in registry — skip (might be stdlib)
+			resolved = append(resolved, DepNode{Name: depName, Version: "unknown", Dependencies: nil})
+			continue
+		}
+
+		depData, _ := io.ReadAll(depResp.Body)
+		depResp.Body.Close()
+
+		var depMeta PackageMetadata
+		if err := json.Unmarshal(depData, &depMeta); err != nil {
+			continue
+		}
+
+		// Resolve version: use requested version or latest
+		depVersion := ""
+		if len(depParts) == 2 {
+			depVersion = depParts[1]
+		}
+		if depVersion == "" || depMeta.Versions[depVersion].Version == "" {
+			var latestTime time.Time
+			for v, details := range depMeta.Versions {
+				t, err := time.Parse(time.RFC3339, details.PublishedAt)
+				if err == nil && t.After(latestTime) {
+					latestTime = t
+					depVersion = v
+				}
+			}
+		}
+
+		if vd, ok := depMeta.Versions[depVersion]; ok {
+			resolved = append(resolved, DepNode{Name: depName, Version: depVersion, Dependencies: vd.Dependencies})
+			queue = append(queue, vd.Dependencies...)
+		} else {
+			resolved = append(resolved, DepNode{Name: depName, Version: depVersion, Dependencies: nil})
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"package":  name,
+		"version":  version,
+		"tree":     resolved,
+		"resolved": len(resolved),
+	})
+}
+
 func handleGetVersions(w http.ResponseWriter, r *http.Request) {
-	// Path will be /api/packages/{name}/versions
-	path := strings.TrimPrefix(r.URL.Path, "/api/packages/")
+	// Path will be /api/packages/{name}/versions or /api/v1/packages/{name}/versions
+	var path string
+	if strings.HasPrefix(r.URL.Path, "/api/v1/packages/") {
+		path = strings.TrimPrefix(r.URL.Path, "/api/v1/packages/")
+	} else {
+		path = strings.TrimPrefix(r.URL.Path, "/api/packages/")
+	}
 	path = strings.TrimSuffix(path, "/versions")
 	name := strings.TrimSpace(path)
 	if name == "" {
-		http.Error(w, "Missing package name", http.StatusBadRequest)
+		WriteJSONError(w, r, "Missing package name", "ERR_MISSING_NAME_PARAMETER", http.StatusBadRequest)
 		return
 	}
 
@@ -443,7 +605,7 @@ func handleGetVersions(w http.ResponseWriter, r *http.Request) {
 		Key:    aws.String(metadataKey),
 	})
 	if err != nil {
-		http.Error(w, "Package not found", http.StatusNotFound)
+		WriteJSONError(w, r, "Package not found", "ERR_PACKAGE_NOT_FOUND", http.StatusNotFound)
 		return
 	}
 	defer resp.Body.Close()
@@ -674,4 +836,30 @@ func handleWebDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write(data)
+}
+
+type APIError struct {
+	Error   string `json:"error"`
+	Code    string `json:"code"`
+	TraceID string `json:"trace_id,omitempty"`
+}
+
+func WriteJSONError(w http.ResponseWriter, r *http.Request, msg string, code string, status int) {
+	traceID := ""
+	if r != nil {
+		traceparent := r.Header.Get("traceparent")
+		if traceparent != "" {
+			parts := strings.Split(traceparent, "-")
+			if len(parts) >= 2 {
+				traceID = parts[1]
+			}
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(APIError{
+		Error:   msg,
+		Code:    code,
+		TraceID: traceID,
+	})
 }
