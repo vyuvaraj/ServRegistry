@@ -145,7 +145,7 @@ func main() {
 
 	// API to list packages or versions
 	mux.HandleFunc("/api/packages/", handlePackagesAPI)
-	mux.HandleFunc("/api/v1/packages/", handlePackagesAPI)
+	mux.HandleFunc("/api/v1/registry/", handlePackagesAPI)
 
 	// Web dashboard static files
 	mux.HandleFunc("/", handleWebDashboard)
