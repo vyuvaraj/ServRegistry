@@ -194,7 +194,12 @@ func (tp *TelemetryProvider) EndSpan(span *Span, err error, attributes map[strin
 		}
 		attributes["error.message"] = err.Error()
 	}
-	span.Attributes = attributes
+	if span.Attributes == nil {
+		span.Attributes = make(map[string]interface{})
+	}
+	for k, v := range attributes {
+		span.Attributes[k] = v
+	}
 
 	tp.mu.Lock()
 	tp.spanBuffer = append(tp.spanBuffer, *span)

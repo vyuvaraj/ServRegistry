@@ -133,6 +133,6 @@ github.com/aws/smithy-go/waiter
 # github.com/golang-jwt/jwt/v5 v5.3.1
 ## explicit; go 1.21
 github.com/golang-jwt/jwt/v5
-# github.com/vyuvaraj/ServShared v0.0.0-20260622110625-0403a0126514
+# github.com/vyuvaraj/ServShared v0.0.0-20260627072934-fdbc3a616721
 ## explicit; go 1.26.4
 github.com/vyuvaraj/ServShared

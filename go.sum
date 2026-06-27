@@ -36,5 +36,5 @@ github.com/aws/smithy-go v1.27.1 h1:4T340VFndXtADGF52gYa1POyL7s9E4Z1OeZ1hCscIw8=
 github.com/aws/smithy-go v1.27.1/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
 github.com/golang-jwt/jwt/v5 v5.3.1 h1:kYf81DTWFe7t+1VvL7eS+jKFVWaUnK9cB1qbwn63YCY=
 github.com/golang-jwt/jwt/v5 v5.3.1/go.mod h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArsqaEUEa5bE=
-github.com/vyuvaraj/ServShared v0.0.0-20260622110625-0403a0126514 h1:7027hzR0l15EStvmpQ+v6gY953lw1zTALSJKR9HQTHc=
-github.com/vyuvaraj/ServShared v0.0.0-20260622110625-0403a0126514/go.mod h1:quYZYsX/CJFhifDhhhpf3H32EZAov8SX+5eGC8wb5dI=
+github.com/vyuvaraj/ServShared v0.0.0-20260627072934-fdbc3a616721 h1:BkAtGcnWtkxfYqCSS0kxNdBZi5SwokAowbg5EOSqWEs=
+github.com/vyuvaraj/ServShared v0.0.0-20260627072934-fdbc3a616721/go.mod h1:quYZYsX/CJFhifDhhhpf3H32EZAov8SX+5eGC8wb5dI=
