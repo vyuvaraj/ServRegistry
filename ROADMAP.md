@@ -26,3 +26,11 @@ This roadmap outlines the planned development phases for the ServRegistry packag
 ## Phase 3: Cryptographic Signatures (Q4 2026)
 - [x] **Package Signing**: Support uploading `.sig` signature files alongside tarballs.
 - [x] **Public Key Verification**: Cryptographically verify author signatures at the command-line before installation.
+
+## Phase 4: Architectural Depth & DevOps (Pending)
+- [ ] **`serv registry audit`** — CLI command that scans installed packages for known vulnerable versions, outdated dependencies, and deprecated packages, with fix suggestions (Security / DX)
+- [ ] **Private Namespace Support** — Scoped package namespaces (`@org/package`) with access control lists; teams can publish internal packages without exposing to the public index (DevOps)
+- [ ] **Mirror & Offline Cache** — Local proxy mode that caches the public registry to a ServStore bucket; enables air-gapped builds and faster CI pipelines with zero external fetches (DevOps)
+- [ ] **Provenance Attestation** — Record build provenance (commit SHA, CI run ID, builder identity) alongside the package; verify with `serv verify --attestation` for supply-chain security (Security)
+
+> See [UNIFIED_ROADMAP.md](../UNIFIED_ROADMAP.md) for the full ecosystem priority matrix and architectural recommendations.
