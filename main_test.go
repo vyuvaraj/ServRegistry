@@ -260,3 +260,25 @@ version = "1.0.0"
 	rr = httptest.NewRecorder()
 	handlePublish(rr, req)
 }
+
+func BenchmarkPackageIndexLookup(b *testing.B) {
+	// Pre-populate the package index
+	packageIndexMu.Lock()
+	for i := 0; i < 500; i++ {
+		name := fmt.Sprintf("pkg-%d", i)
+		packageIndex[name] = &PackageIndexItem{
+			Name:   name,
+			Latest: "1.0.0",
+			Versions: []string{"0.9.0", "1.0.0"},
+		}
+	}
+	packageIndexMu.Unlock()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		name := fmt.Sprintf("pkg-%d", i%500)
+		packageIndexMu.RLock()
+		_, _ = packageIndex[name]
+		packageIndexMu.RUnlock()
+	}
+}
